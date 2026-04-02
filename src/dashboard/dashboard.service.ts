@@ -102,6 +102,13 @@ export class DashboardService {
     });
   }
 
+  private async getTransactions(userId: number) {
+    return this.prisma.transactions.findMany({
+      where: { userId },
+      orderBy: { date: 'asc' },
+    });
+  }
+
   // 📊 Gráfico (diário)
   private async getDailyBalance(userId: number, start: Date, end: Date) {
     const transactions = await this.prisma.transactions.findMany({
@@ -142,17 +149,24 @@ export class DashboardService {
   async getDashboard(userId: number, range: RangeType) {
     const { start, end } = this.getDateRange(range);
 
-    const [summary, topTransactions, recentTransactions, dailyBalance] =
-      await Promise.all([
-        this.getSummary(userId, start, end),
-        this.getTopTransactions(userId, start, end),
-        this.getRecentTransactions(userId),
-        this.getDailyBalance(userId, start, end),
-      ]);
+    const [
+      summary,
+      topTransactions,
+      transactions,
+      recentTransactions,
+      dailyBalance,
+    ] = await Promise.all([
+      this.getSummary(userId, start, end),
+      this.getTopTransactions(userId, start, end),
+      this.getTransactions(userId),
+      this.getRecentTransactions(userId),
+      this.getDailyBalance(userId, start, end),
+    ]);
 
     return {
       summary,
       topTransactions,
+      transactions,
       recentTransactions,
       chart: dailyBalance,
     };

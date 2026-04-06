@@ -44,6 +44,7 @@ export class TransactionsService {
         orderBy: { createdAt: 'desc' },
         select: {
           id: true,
+          title: true,
           type: true,
           value: true,
           date: true,
@@ -74,6 +75,7 @@ export class TransactionsService {
       },
       select: {
         id: true,
+        title: true,
         type: true,
         value: true,
         date: true,
@@ -141,6 +143,7 @@ export class TransactionsService {
       },
       select: {
         id: true,
+        title: true,
         type: true,
         value: true,
         date: true,
@@ -170,6 +173,7 @@ export class TransactionsService {
       },
       select: {
         id: true,
+        title: true,
         type: true,
         value: true,
         date: true,
@@ -179,8 +183,12 @@ export class TransactionsService {
   }
 
   private normalizeDate(date: string | Date): Date {
-    const d = new Date(date);
+    if (typeof date === 'string') {
+      const [year, month, day] = date.split('-').map(Number);
 
-    return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0);
+      return new Date(year, month - 1, day); // ✅ LOCAL TIME
+    }
+
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 }

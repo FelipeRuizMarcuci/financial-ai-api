@@ -19,19 +19,48 @@ export class TransactionsService {
     const page = Number(query.page ?? 1);
     const limit = Number(query.limit ?? 30);
     const skip = (page - 1) * limit;
+
     const q = query.q?.trim();
+
+    let startDate: Date | undefined;
+    let endDate: Date | undefined;
+
+    if (query.month) {
+      const [year, month] = query.month.split('-').map(Number);
+
+      startDate = new Date(Date.UTC(year, month - 1, 1));
+      endDate = new Date(Date.UTC(year, month, 1));
+    }
 
     const where: Prisma.transactionsWhereInput = {
       deleted: 0,
       userId: adminId,
+
       ...(q
         ? {
             OR: [
-              { title: { contains: q } },
-              // { type: { contains: q } },
-              // { value: { contains: q } },
-              // { date: { contains: q } },
+              {
+                title: {
+                  contains: q,
+                  mode: 'insensitive',
+                },
+              },
             ],
+          }
+        : {}),
+
+      ...(query.type
+        ? {
+            type: query.type,
+          }
+        : {}),
+
+      ...(startDate && endDate
+        ? {
+            date: {
+              gte: startDate,
+              lt: endDate,
+            },
           }
         : {}),
     };

@@ -176,19 +176,19 @@ export class GoalsService {
   }
 
   async addValue(id: number, adminId: number, data: AddValueDto) {
-    const existingUser = await this.prisma.user.findFirst({
-      where: {
-        id: adminId,
-      },
+    const goal = await this.prisma.goals.findFirst({
+      where: { id, userId: adminId },
     });
 
-    if (!existingUser) {
-      throw new NotFoundException('USER_NOT_FOUND');
+    if (!goal || !goal.value || !data.value) {
+      throw new NotFoundException('GOAL_NOT_FOUND');
     }
 
-    return await this.prisma.goals.update({
-      where: { id, userId: existingUser.id },
-      data,
+    return this.prisma.goals.update({
+      where: { id },
+      data: {
+        value: goal.value + data.value,
+      },
     });
   }
 }

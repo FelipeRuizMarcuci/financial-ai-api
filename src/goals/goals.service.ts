@@ -182,14 +182,14 @@ export class GoalsService {
       where: { id, userId: adminId },
     });
 
-    if (!goal || !goal.value || !data.value) {
+    if (!goal || !data.value) {
       throw new NotFoundException('GOAL_NOT_FOUND');
     }
 
     return this.prisma.goals.update({
       where: { id },
       data: {
-        value: goal.value + data.value,
+        value: Number(goal.value) + data.value,
       },
     });
   }

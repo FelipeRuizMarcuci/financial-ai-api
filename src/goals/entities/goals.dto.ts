@@ -15,5 +15,5 @@ export class GoalDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  dateDeadline?: string;
+  dateDeadline?: Date;
 }

@@ -29,7 +29,7 @@ export class GoalsService {
         ? {
             OR: [
               { title: { contains: q } },
-              { dateDeadline: { contains: q } },
+              // { dateDeadline: { contains: q } },
               // { value: { contains: q } },
               // { date: { contains: q } },
             ],
@@ -101,9 +101,11 @@ export class GoalsService {
       throw new NotFoundException('USER_NOT_FOUND');
     }
 
-    if (!data.title || !data.targetValue || !data.value || !data.dateDeadline) {
+    if (!data.title || !data.targetValue || !data.dateDeadline) {
       throw new BadRequestException('DATA_ERROR');
     }
+
+    const parsedDate = new Date(data.dateDeadline);
 
     return this.prisma.goals.create({
       data: {
@@ -111,7 +113,7 @@ export class GoalsService {
         title: data.title,
         targetValue: data.targetValue,
         value: data.value,
-        dateDeadline: data.dateDeadline,
+        dateDeadline: this.normalizeDate(parsedDate),
       },
     });
   }
@@ -190,5 +192,15 @@ export class GoalsService {
         value: goal.value + data.value,
       },
     });
+  }
+
+  private normalizeDate(date: string | Date): Date {
+    if (typeof date === 'string') {
+      const [year, month, day] = date.split('-').map(Number);
+
+      return new Date(year, month - 1, day); // ✅ LOCAL TIME
+    }
+
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
   }
 }

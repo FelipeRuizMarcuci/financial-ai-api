@@ -46,8 +46,8 @@ model goals {
   userId Int
   title String
   targetValue Int
-  value Int?
-  dateDeadline String
+  value Int? @default(0)
+  dateDeadline DateTime
   deleted Int @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -85,6 +85,11 @@ export class ReportsService {
       },
       take: 10,
       select: {
+        id: true,
+        title: true,
+        type: true,
+        value: true,
+        date: true,
         category: true,
       },
     });

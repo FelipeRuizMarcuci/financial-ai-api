@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
 
@@ -139,23 +140,86 @@ export class DashboardService {
     }));
   }
 
+  private async getMonthlyBalance(userId: number, start: Date, end: Date) {
+    const transactions = await this.prisma.transactions.findMany({
+      where: {
+        userId,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { date: 'asc' },
+    });
+
+    const grouped: Record<string, { income: number; expense: number }> = {};
+
+    transactions.forEach((t) => {
+      const d = new Date(t.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+
+      if (!grouped[key]) {
+        grouped[key] = { income: 0, expense: 0 };
+      }
+
+      if (t.type === 'REVENUE') {
+        grouped[key].income += Number(t.value);
+      } else {
+        grouped[key].expense += Number(t.value);
+      }
+    });
+
+    // gerar todos os meses no intervalo
+    const result: {
+      month: string;
+      income: number;
+      expense: number;
+      balance: number;
+    }[] = [];
+    const current = new Date(start);
+
+    while (current <= end) {
+      const key = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, '0')}`;
+
+      const values = grouped[key] || { income: 0, expense: 0 };
+
+      result.push({
+        month: key,
+        income: values.income,
+        expense: values.expense,
+        balance: values.income - values.expense,
+      });
+
+      current.setMonth(current.getMonth() + 1);
+    }
+
+    return result;
+  }
+
   // 🚀 Dashboard completo
   async getDashboard(userId: number, range: RangeType) {
     const { start, end } = this.getDateRange(range);
 
-    const [summary, topTransactions, recentTransactions, dailyBalance] =
-      await Promise.all([
-        this.getSummary(userId, start, end),
-        this.getTopTransactions(userId, start, end),
-        this.getRecentTransactions(userId),
-        this.getDailyBalance(userId, start, end),
-      ]);
+    const [
+      summary,
+      topTransactions,
+      recentTransactions,
+      dailyBalance,
+      monthlyBalance,
+    ] = await Promise.all([
+      this.getSummary(userId, start, end),
+      this.getTopTransactions(userId, start, end),
+      this.getRecentTransactions(userId),
+      this.getDailyBalance(userId, start, end),
+      this.getMonthlyBalance(userId, start, end),
+    ]);
 
     return {
       summary,
       topTransactions,
       recentTransactions,
-      chart: dailyBalance,
+      chartDaily: dailyBalance,
+      chartMonthly: monthlyBalance,
     };
   }
 }

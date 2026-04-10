@@ -1,12 +1,17 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 /* eslint-disable prettier/prettier */
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'prisma/prisma.service';
+import { AiService } from 'src/ai-service/ai.service';
 
 type RangeType = 'current_month' | 'last_month' | 'last_6_months';
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly aiService: AiService,
+  ) {}
 
   // 📅 Range
   private getDateRange(range: RangeType) {
@@ -200,6 +205,18 @@ export class DashboardService {
   async getDashboard(userId: number, range: RangeType) {
     const { start, end } = this.getDateRange(range);
 
+    const allTransactions = await this.prisma.transactions.findMany({
+      where: { userId },
+      orderBy: { date: 'asc' },
+    });
+
+    const formattedTransactions = allTransactions.map((t) => ({
+      amount: t.type === 'EXPENSE' ? -Number(t.value) : Number(t.value),
+      category: t.category ?? 'Outros',
+      date: t.date,
+      description: t.title ?? '',
+    }));
+
     const [
       summary,
       topTransactions,
@@ -214,12 +231,24 @@ export class DashboardService {
       this.getMonthlyBalance(userId, start, end),
     ]);
 
+    const [insights, behavior, forecast] = await Promise.all([
+      this.aiService.getInsights(formattedTransactions),
+      this.aiService.getBehavior(formattedTransactions),
+      this.aiService.getForecast({
+        transactions: formattedTransactions,
+        balance: summary.balance,
+      }),
+    ]);
+
     return {
       summary,
       topTransactions,
       recentTransactions,
       chartDaily: dailyBalance,
       chartMonthly: monthlyBalance,
+      insights,
+      behavior,
+      forecast,
     };
   }
 }

@@ -211,10 +211,11 @@ export class DashboardService {
     });
 
     const formattedTransactions = allTransactions.map((t) => ({
-      amount: t.type === 'EXPENSE' ? -Number(t.value) : Number(t.value),
-      category: t.category ?? 'Outros',
+      amount: t.value,
+      category: t.category ?? 'OTHERS',
       date: t.date,
       description: t.title ?? '',
+      type: t.type,
     }));
 
     const [
@@ -231,9 +232,8 @@ export class DashboardService {
       this.getMonthlyBalance(userId, start, end),
     ]);
 
-    const [insights, behavior, forecast] = await Promise.all([
+    const [insightsResponse, forecast] = await Promise.all([
       this.aiService.getInsights(formattedTransactions),
-      this.aiService.getBehavior(formattedTransactions),
       this.aiService.getForecast({
         transactions: formattedTransactions,
         balance: summary.balance,
@@ -246,8 +246,7 @@ export class DashboardService {
       recentTransactions,
       chartDaily: dailyBalance,
       chartMonthly: monthlyBalance,
-      insights,
-      behavior,
+      insightsResponse,
       forecast,
     };
   }

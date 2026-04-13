@@ -16,13 +16,6 @@ export class AiService {
     return res.data;
   }
 
-  async getBehavior(transactions: any[]) {
-    const res = await lastValueFrom(
-      this.http.post(`${this.baseUrl}/behavior`, transactions),
-    );
-    return res.data;
-  }
-
   async getForecast(payload: any) {
     const res = await lastValueFrom(
       this.http.post(`${this.baseUrl}/forecast`, payload),
